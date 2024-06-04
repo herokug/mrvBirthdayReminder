@@ -1,27 +1,38 @@
 import cron from "node-cron";
-import axios from "axios";
+import puppeteer from "puppeteer";
+import cheerio from "cheerio";
 import http from "http";
+
+// Function to extract the message from HTML content
+function extractMessage(html) {
+    const $ = cheerio.load(html);
+    return $('body').text().trim();
+}
 
 // Function to run the task
 async function runTask() {
     try {
-        // Make a request to your PHP script
-        const response = await axios.get('http://mrvdatabase.rf.gd/bdayreminder.php', {
-            headers: {
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-                'Accept-Encoding': 'gzip, deflate',
-                'Accept-Language': 'en-US,en;q=0.5',
-                'Cache-Control': 'max-age=0',
-                'Connection': 'keep-alive',
-                'Cookie': '__test=ac5ea580ed94528a64cd1a45c684f6c0; PHPSESSID=cd898b0d10111ae47560fc16c4992d91', // Extracted from the request
-                'Host': 'mrvdatabase.rf.gd',
-                'Sec-Gpc': '1',
-                'Upgrade-Insecure-Requests': '1',
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36' // Extracted from the request
-            }
-        });
+        // Launch Puppeteer browser
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
 
-        console.log('script executed: ', response.data);
+        // Set user agent (optional)
+        // await page.setUserAgent('Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36');
+
+        // Navigate to the page
+        await page.goto('http://mrvdatabase.rf.gd/bdayreminder.php');
+
+        // Wait for some time to ensure the page has loaded completely
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Get the content of the page
+        const content = await page.content();
+        const message = extractMessage(content);
+
+        // Close the browser
+        await browser.close();
+        
+        console.log('script executed:', message);
 
     } catch (error) {
         console.error('Error executing the script or logging status:', error);
@@ -30,7 +41,7 @@ async function runTask() {
 
 console.log('sheduling cron...');
 // Schedule the task to run at midnight every day
-cron.schedule('0 0 * * *', async () => {
+cron.schedule('40 1 * * *', async () => {
     await runTask();
 }, {
     timezone: "Asia/Colombo" // Set the timezone to Sri Lanka
@@ -61,4 +72,5 @@ const PORT = 8000; // Change this to your desired port
 // Listen on the defined port
 server.listen(PORT, () => {
     console.log(`Server running at port ${PORT}`);
+    console.log('ready to go')
 });
