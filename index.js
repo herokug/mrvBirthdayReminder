@@ -13,7 +13,13 @@ function extractMessage(html) {
 async function runTask() {
     try {
         // Launch Puppeteer browser
-        const browser = await puppeteer.launch();
+        const browser = await puppeteer.launch({ 
+            headless: true, 
+            args: [ 
+              '--no-sandbox', 
+              '--disable-gpu', 
+            ] 
+        });
         const page = await browser.newPage();
 
         // Set user agent (optional)
@@ -39,7 +45,7 @@ async function runTask() {
     }
 }
 
-console.log('sheduling cron...');
+console.log('scheduling cron...');
 // Schedule the task to run at midnight every day
 cron.schedule('40 1 * * *', async () => {
     await runTask();
@@ -54,7 +60,7 @@ async function testTask() {
 }
 
 // Test the task immediately
-// testTask();
+testTask();
 
 // You can also test the task periodically if needed
 // setInterval(testTask, 24 * 60 * 60 * 1000); // Uncomment this line to test the task periodically
